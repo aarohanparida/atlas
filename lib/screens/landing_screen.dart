@@ -1,4 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../theme/app_colors.dart';
+import '../theme/app_text.dart';
+import '../widgets/atlas_logo.dart';
+import '../widgets/primary_button.dart';
+import 'auth_screen.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class LandingScreen extends StatelessWidget {
   const LandingScreen({super.key});
@@ -6,54 +14,68 @@ class LandingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
 
       body: SafeArea(
-        child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30),
+
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(
-                Icons.public,
-                size: 120,
+              const SizedBox(height: 90),
+
+              
+              Hero(
+                tag: 'atlasLogo',
+                child: const AtlasLogo(size: 140)
+                    .animate()
+                    .fade(duration: 700.ms)
+                    .rotate(
+                      begin: -0.25, // -90°
+                      end: 0,
+                      duration: 900.ms,
+                      curve: Curves.easeOutCubic,
+                    ),
               ),
+          
 
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
 
-              Text(
-                "ATLAS",
-                style: TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.w300,
-                  letterSpacing: 8,
+              const Center(
+                child: Text(
+                  "The home for every",
+                  style: AppText.subtitle,
+                  textAlign: TextAlign.center,
                 ),
               ),
 
-              SizedBox(height: 20),
-
-              Text(
-                "Your life, organized intelligently.",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey,
+              const Center(
+                child: Text(
+                  "memory.",
+                  style: AppText.subtitle,
+                  textAlign: TextAlign.center,
                 ),
               ),
 
-              SizedBox(height: 60),
+              const Spacer(),
 
-              ElevatedButton(
-                onPressed: () {},
-
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 18,
-                  ),
-                  child: Text("Get Started"),
-                ),
+              PrimaryButton(
+                text: "Get Started",
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AuthScreen(),
+                    ),
+                  );
+                  HapticFeedback.lightImpact(); 
+                },
               ),
+
+              const SizedBox(height: 50),
             ],
-          ),
+          )
         ),
       ),
     );

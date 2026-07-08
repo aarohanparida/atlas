@@ -7,6 +7,8 @@ import '../widgets/atlas_logo.dart';
 import '../widgets/primary_button.dart';
 import 'auth_screen.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+// import '../widgets/animated_globe.dart';
+// import '../widgets/atlas_text.dart';
 
 class LandingScreen extends StatelessWidget {
   const LandingScreen({super.key});
@@ -26,37 +28,40 @@ class LandingScreen extends StatelessWidget {
               const SizedBox(height: 90),
 
               
-              Hero(
-                tag: 'atlasLogo',
-                child: const AtlasLogo(size: 140)
-                    .animate()
-                    .fade(duration: 700.ms)
-                    .rotate(
-                      begin: -0.25, // -90°
-                      end: 0,
-                      duration: 900.ms,
-                      curve: Curves.easeOutCubic,
-                    ),
-              ),
-          
+              const AtlasLogo(size: 170)
+                .animate()
+                .fade(
+                  duration: 700.ms,
+                  curve: Curves.easeOut,
+                )
+                .scale(
+                  begin: const Offset(0.92, 0.92),
+                  end: const Offset(1.0, 1.0),
+                  duration: 700.ms,
+                  curve: Curves.easeOutCubic,
+                ),
 
               const SizedBox(height: 30),
 
-              const Center(
-                child: Text(
-                  "The home for every",
-                  style: AppText.subtitle,
-                  textAlign: TextAlign.center,
-                ),
-              ),
 
-              const Center(
-                child: Text(
-                  "memory.",
-                  style: AppText.subtitle,
-                  textAlign: TextAlign.center,
-                ),
-              ),
+              Text(
+                "The home for every",
+                style: AppText.subtitle,
+                textAlign: TextAlign.center,
+              )
+                .animate(delay: 1200.ms)
+                .fade(),
+        
+
+
+              Text(
+                "memory.",
+                style: AppText.subtitle,
+                textAlign: TextAlign.center,
+              )
+                .animate(delay: 1200.ms)
+                .fade(),
+
 
               const Spacer(),
 
@@ -71,7 +76,10 @@ class LandingScreen extends StatelessWidget {
                   );
                   HapticFeedback.lightImpact(); 
                 },
-              ),
+              )
+                .animate(delay: 1500.ms)
+                .fade()
+                .moveY(begin: 25),
 
               const SizedBox(height: 50),
             ],

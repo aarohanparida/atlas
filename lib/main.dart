@@ -1,3 +1,4 @@
+import 'package:atlas/screens/permissions/photos_permission_screen.dart';
 import 'package:flutter/material.dart';
 import 'screens/landing_screen.dart';
 import 'theme/app_theme.dart';
@@ -15,7 +16,7 @@ class AtlasApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Atlas',
       theme: AppTheme.light,
-      home: const LandingScreen(),
+      home: const PhotosPermissionScreen(),
     );
   }
 }

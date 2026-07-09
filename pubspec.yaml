@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_svg: ^2.3.0
   flutter_animate: ^4.5.2
+  video_player: ^2.10.0
 
 dev_dependencies:
   flutter_test:
@@ -63,3 +64,4 @@ flutter:
   
   assets:
     - assets/images/
+    - assets/videos/

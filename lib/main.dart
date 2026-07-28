@@ -17,7 +17,7 @@ class AtlasApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Atlas',
       theme: AppTheme.light,
-      home: const HomeScreen(),
+      home: const PhotosPermissionScreen(),
     );
   }
 }

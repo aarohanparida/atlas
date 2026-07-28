@@ -1,3 +1,4 @@
+import 'package:atlas/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../../widgets/permission_screen.dart';
@@ -18,7 +19,12 @@ class NotificationsPermissionScreen extends StatelessWidget {
       buttonText: 'Enable Notifications',
 
       onPressed: () {
-        // Go to Home
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const HomeScreen(),
+          ),
+        );
       },
     );
   }

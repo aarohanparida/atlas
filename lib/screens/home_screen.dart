@@ -17,6 +17,13 @@ class HomeScreen extends StatelessWidget {
       bottomNavigationBar: NavigationBar(
         backgroundColor: Colors.white,
         selectedIndex: 0,
+
+        onDestinationSelected: (int index) {
+          setState(() {
+            index = 0;
+          });
+        },
+
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),

@@ -7,8 +7,11 @@ import '../theme/app_text.dart';
 import '../widgets/atlas_logo.dart';
 import '../widgets/social_button.dart';
 
+import '../screens/permissions/photos_permission_screen.dart';
+import 'email_auth_screen.dart';
+
 class AuthScreen extends StatelessWidget {
-  const AuthScreen({super.key});
+  AuthScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -59,9 +62,8 @@ class AuthScreen extends StatelessWidget {
                 ),
                 text: "Continue with Google",
                 onPressed: () {
-                  // TODO: hook up Google sign-in
                   HapticFeedback.lightImpact();
-                },
+                }
               ),
 
               const SizedBox(height: 16),
@@ -74,8 +76,14 @@ class AuthScreen extends StatelessWidget {
                 ),
                 text: "Continue with Email",
                 onPressed: () {
-                  // TODO: navigate to email sign-in / sign-up flow
                   HapticFeedback.lightImpact();
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const EmailAuthScreen(),
+                    ),
+                  );
                 },
               ),
 

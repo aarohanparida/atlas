@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../widgets/permission_screen.dart';
 import 'calendar_permission_screen.dart';
+import '../../services/onboarding_service.dart';
+import '../home_screen.dart';
 
 class PhotosPermissionScreen extends StatelessWidget {
   const PhotosPermissionScreen({super.key});
@@ -18,12 +20,17 @@ class PhotosPermissionScreen extends StatelessWidget {
 
       buttonText: 'Allow Photos',
 
-      onPressed: () {
-        Navigator.push(
+      onPressed: () async {
+        await OnboardingService.complete();
+
+        if (!context.mounted) return;
+
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (_) => const CalendarPermissionScreen(),
+            builder: (_) => const HomeScreen(),
           ),
+          (route) => false,
         );
       },
     );

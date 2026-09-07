@@ -34,6 +34,7 @@ class MemoryService {
     required DateTime date,
     required String location,
     required List<String> people,
+    required List<String> photoPaths,
   }) async {
     await _memoriesCollection.add({
       'title': title.trim(),

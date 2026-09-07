@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-
 import '../services/memory_service.dart';
+
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 
 class CreateMemoryScreen extends StatefulWidget {
   const CreateMemoryScreen({super.key});
@@ -10,8 +14,7 @@ class CreateMemoryScreen extends StatefulWidget {
       _CreateMemoryScreenState();
 }
 
-class _CreateMemoryScreenState
-    extends State<CreateMemoryScreen> {
+class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
   final MemoryService _memoryService = MemoryService();
 
   final TextEditingController _titleController =
@@ -25,6 +28,10 @@ class _CreateMemoryScreenState
 
   final TextEditingController _peopleController =
       TextEditingController();
+
+  final ImagePicker _picker = ImagePicker();
+
+  List<XFile> _selectedImages = [];
 
   DateTime _selectedDate = DateTime.now();
 
@@ -57,56 +64,57 @@ class _CreateMemoryScreenState
   }
 
   Future<void> _saveMemory() async {
-    final title = _titleController.text.trim();
+  final title = _titleController.text.trim();
 
-    if (title.isEmpty) {
-      setState(() {
-        _error = 'Give your memory a title.';
-      });
+  if (title.isEmpty) {
+    setState(() {
+      _error = 'Give your memory a title.';
+    });
+    return;
+  }
 
-      return;
-    }
+  setState(() {
+    _saving = true;
+    _error = null;
+  });
+
+  try {
+    final people = _peopleController.text
+        .split(',')
+        .map((person) => person.trim())
+        .where((person) => person.isNotEmpty)
+        .toList();
+
+    // Save the selected photos onto the phone first
+    final photoPaths = await _savePhotosLocally();
+
+    // Then save the memory info + photo paths to Firestore
+    await _memoryService.createMemory(
+      title: title,
+      description: _descriptionController.text.trim(),
+      date: _selectedDate,
+      location: _locationController.text.trim(),
+      people: people,
+      photoPaths: photoPaths,
+    );
+
+    if (!mounted) return;
+
+    Navigator.pop(context);
+  } catch (e) {
+    if (!mounted) return;
 
     setState(() {
-      _saving = true;
-      _error = null;
+      _error = 'Could not save this memory. Please try again.';
     });
-
-    try {
-      final people = _peopleController.text
-          .split(',')
-          .map((person) => person.trim())
-          .where((person) => person.isNotEmpty)
-          .toList();
-
-      await _memoryService.createMemory(
-        title: title,
-        description:
-            _descriptionController.text.trim(),
-        date: _selectedDate,
-        location:
-            _locationController.text.trim(),
-        people: people,
-      );
-
-      if (!mounted) return;
-
-      Navigator.pop(context);
-    } catch (e) {
-      if (!mounted) return;
-
+  } finally {
+    if (mounted) {
       setState(() {
-        _error =
-            'Could not save this memory. Please try again.';
+        _saving = false;
       });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _saving = false;
-        });
-      }
     }
   }
+}
 
   String _formattedDate() {
     const months = [
@@ -127,6 +135,48 @@ class _CreateMemoryScreenState
     return '${months[_selectedDate.month - 1]} '
         '${_selectedDate.day}, '
         '${_selectedDate.year}';
+  }
+
+  // photo picker method
+  Future<void> _pickPhotos() async {
+    final List<XFile> images = await _picker.pickMultiImage();
+
+    if (images.isNotEmpty) {
+      setState(() {
+        _selectedImages = images;
+      });
+    }
+  }
+
+  // image save method locally
+  Future<List<String>> _savePhotosLocally() async {
+    final directory = await getApplicationDocumentsDirectory();
+
+    final photosDirectory = Directory(
+      '${directory.path}/memory_photos',
+    );
+
+    if (!await photosDirectory.exists()) {
+      await photosDirectory.create(recursive: true);
+    }
+
+    final List<String> savedPaths = [];
+
+    for (final image in _selectedImages) {
+      final extension = path.extension(image.path);
+
+      final fileName =
+          '${DateTime.now().microsecondsSinceEpoch}$extension';
+
+      final newPath =
+          '${photosDirectory.path}/$fileName';
+
+      await File(image.path).copy(newPath);
+
+      savedPaths.add(newPath);
+    }
+
+    return savedPaths;
   }
 
   @override
@@ -256,12 +306,14 @@ class _CreateMemoryScreenState
               const SizedBox(height: 20),
 
               OutlinedButton.icon(
-                onPressed: null,
+                onPressed: _pickPhotos,
                 icon: const Icon(
                   Icons.photo_library_outlined,
                 ),
-                label: const Text(
-                  'Add Photos — Coming Next',
+                label: Text(
+                  _selectedImages.isEmpty
+                      ? 'Add Photos'
+                      : '${_selectedImages.length} Photos Selected',
                 ),
               ),
 

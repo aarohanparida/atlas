@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
-import '../services/memory_service.dart';
-
-import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
+
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
+
+import '../services/memory_service.dart';
 
 class CreateMemoryScreen extends StatefulWidget {
   const CreateMemoryScreen({super.key});
@@ -173,7 +174,13 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
 
       await File(image.path).copy(newPath);
 
-      savedPaths.add(newPath);
+      final exists = await File(newPath).exists();
+
+      print('ORIGINAL: ${image.path}');
+      print('SAVED: $newPath');
+      print('EXISTS: $exists');
+
+      savedPaths.add('memory_photos/$fileName');
     }
 
     return savedPaths;
@@ -316,6 +323,62 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
                       : '${_selectedImages.length} Photos Selected',
                 ),
               ),
+
+              if (_selectedImages.isNotEmpty) ...[
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  height: 110,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _selectedImages.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      final image = _selectedImages[index];
+
+                      return Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.file(
+                              File(image.path),
+                              width: 110,
+                              height: 110,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+
+                          Positioned(
+                            top: 5,
+                            right: 5,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedImages.removeAt(index);
+                                });
+                              },
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: const BoxDecoration(
+                                  color: Colors.black,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
 
               if (_error != null) ...[
                 const SizedBox(height: 20),

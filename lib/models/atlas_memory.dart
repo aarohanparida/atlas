@@ -7,6 +7,7 @@ class AtlasMemory {
   final DateTime date;
   final String location;
   final List<String> people;
+  final List<String> photoPaths;
   final DateTime? createdAt;
 
   AtlasMemory({
@@ -16,6 +17,7 @@ class AtlasMemory {
     required this.date,
     required this.location,
     required this.people,
+    required this.photoPaths,
     this.createdAt,
   });
 
@@ -31,6 +33,7 @@ class AtlasMemory {
       date: (data['date'] as Timestamp).toDate(),
       location: data['location'] ?? '',
       people: List<String>.from(data['people'] ?? []),
+      photoPaths: List<String>.from(data['photoPaths'] ?? []),
       createdAt: data['createdAt'] is Timestamp
           ? (data['createdAt'] as Timestamp).toDate()
           : null,

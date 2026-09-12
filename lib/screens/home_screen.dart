@@ -8,6 +8,7 @@ import 'timeline_screen.dart';
 import 'search_screen.dart';
 import 'profile_screen.dart';
 import '../services/user_service.dart';
+import 'memory_details_screen.dart';
 
 import '../models/atlas_memory.dart';
 import '../services/memory_service.dart';
@@ -184,10 +185,20 @@ class HomeScreen extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final memory = memories[index];
 
-                        return MemoryTile(
-                          title: memory.title,
-                          date: _formatMemoryDate(
-                            memory.date,
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => MemoryDetailsScreen(
+                                  memory: memory,
+                                ),
+                              ),
+                            );
+                          },
+                          child: MemoryTile(
+                            title: memory.title,
+                            date: _formatMemoryDate(memory.date),
                           ),
                         );
                       },

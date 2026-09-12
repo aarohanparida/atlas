@@ -42,6 +42,7 @@ class MemoryService {
       'date': Timestamp.fromDate(date),
       'location': location.trim(),
       'people': people,
+      'photoPaths': photoPaths,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
@@ -63,5 +64,27 @@ class MemoryService {
               )
               .toList(),
         );
+  }
+
+  Future<void> updateMemory({
+    required String memoryId,
+    required String title,
+    required String description,
+    required DateTime date,
+    required String location,
+    required List<String> people,
+  }) async {
+    await _memoriesCollection.doc(memoryId).update({
+      'title': title.trim(),
+      'description': description.trim(),
+      'date': Timestamp.fromDate(date),
+      'location': location.trim(),
+      'people': people,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> deleteMemory(String memoryId) async {
+    await _memoriesCollection.doc(memoryId).delete();
   }
 }

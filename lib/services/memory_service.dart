@@ -66,6 +66,21 @@ class MemoryService {
         );
   }
 
+  // getting all memories for timeline
+  Stream<List<AtlasMemory>> getAllMemories() {
+    return _memoriesCollection
+        .orderBy('date', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map(
+                (document) =>
+                    AtlasMemory.fromDocument(document),
+              )
+              .toList(),
+        );
+  }
+
   Future<void> updateMemory({
     required String memoryId,
     required String title,

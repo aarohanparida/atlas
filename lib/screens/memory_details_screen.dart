@@ -53,26 +53,26 @@ class _MemoryDetailsScreenState
     final paths = <String>[];
 
     for (final storedPath in _memory.photoPaths) {
-        final resolvedPath = await _resolvePhotoPath(storedPath);
-        paths.add(resolvedPath);
+      final resolvedPath = await _resolvePhotoPath(storedPath);
+      paths.add(resolvedPath);
     }
 
     if (!mounted) return;
 
     setState(() {
-        _resolvedPhotoPaths = paths;
+      _resolvedPhotoPaths = paths;
     });
 
     // Preload all photos into Flutter's image cache.
     for (final photoPath in paths) {
-        if (!mounted) return;
+      if (!mounted) return;
 
-        await precacheImage(
+      await precacheImage(
         FileImage(File(photoPath)),
         context,
-        );
+      );
     }
-    }
+  }
 
   Future<String> _resolvePhotoPath(
     String storedPath,

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 
 import 'home_screen.dart';
@@ -5,6 +7,7 @@ import 'shared_screen.dart';
 import 'create_memory_screen.dart';
 import 'search_screen.dart';
 import 'profile_screen.dart';
+import "timeline_screen.dart";
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -23,7 +26,7 @@ class _MainNavigationScreenState
   // Create is NOT in here because it opens as its own screen.
   final List<Widget> _pages = const [
     HomeScreen(),
-    SharedScreen(),
+    TimelineScreen(),
     SearchScreen(),
     ProfileScreen(),
   ];
@@ -105,7 +108,7 @@ class _MainNavigationScreenState
           NavigationDestination(
             icon: Icon(Icons.public),
             selectedIcon: Icon(Icons.public),
-            label: 'Shared',
+            label: 'Timeline',
           ),
 
           NavigationDestination(

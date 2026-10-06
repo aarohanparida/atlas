@@ -193,6 +193,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
     final oldest = sortedMemories.first.date;
     final today = DateTime.now();
+    final todayY = _dateToY(today, oldest);
 
     final totalDays = today.difference(oldest).inDays;
 
@@ -200,9 +201,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
     final double timelineHeight = math.max(
       1200.0,
-      300.0 +
-          (totalDays * _pixelsPerDay) +
-          bottomPadding,
+      todayY + 970 + bottomPadding,
     ).toDouble();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -272,6 +271,12 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   ),
 
                   _buildTodayMarker(
+                    today,
+                    oldest,
+                    width,
+                  ),
+
+                  _buildFutureText(
                     today,
                     oldest,
                     width,
@@ -578,6 +583,29 @@ class _TimelineScreenState extends State<TimelineScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildFutureText(
+    DateTime today,
+    DateTime oldest,
+    double width,
+  ) {
+    final todayY = _dateToY(
+      today,
+      oldest,
+    );
+
+    return Positioned(
+      top: todayY + 970,
+      left: 0,
+      right: 0,
+      child: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Text("Where are you going? We can't predict the future!"),
+      ),
+    );
+
   }
 
   double _dateToY(

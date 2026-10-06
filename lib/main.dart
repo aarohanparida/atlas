@@ -7,18 +7,21 @@ import 'screens/landing_screen.dart';
 import 'theme/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:flutter/services.dart';
 
 
 void main() async {
- WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
 
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
+  SystemChrome.setPreferredOrientations([ // setting orientation to portrait permanantly
+    DeviceOrientation.portraitUp,
+  ]); 
 
- await Firebase.initializeApp(
-   options: DefaultFirebaseOptions.currentPlatform,
- );
-
-
- runApp(const AtlasApp());
+  runApp(const AtlasApp());
 }
 
 

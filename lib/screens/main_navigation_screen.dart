@@ -95,7 +95,6 @@ class _MainNavigationScreenState
       ),
 
       bottomNavigationBar: NavigationBar(
-        backgroundColor: Colors.white,
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onDestinationSelected,
         destinations: const [

@@ -38,7 +38,6 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
       return Scaffold(
-        backgroundColor: AppColors.background,
  
       body: SafeArea(
         child: Padding(
@@ -84,7 +83,6 @@ class HomeScreen extends StatelessWidget {
                   hintText: "Search your Atlas...",
                   prefixIcon: const Icon(Icons.search),
                   filled: true,
-                  fillColor: Colors.grey.shade100,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(18),
                     borderSide: BorderSide.none,

@@ -42,7 +42,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -60,6 +59,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   Widget _buildTopNavigation() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         24,
@@ -67,21 +68,28 @@ class _TimelineScreenState extends State<TimelineScreen> {
         24,
         12,
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildTab(
-              label: 'Me',
-              index: 0,
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: _buildTab(
+                label: 'Me',
+                index: 0,
+              ),
             ),
-          ),
-          Expanded(
-            child: _buildTab(
-              label: 'Shared',
-              index: 1,
+            Expanded(
+              child: _buildTab(
+                label: 'Shared',
+                index: 1,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -90,6 +98,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     required String label,
     required int index,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     final selected = _selectedTab == index;
 
     return GestureDetector(
@@ -101,19 +110,29 @@ class _TimelineScreenState extends State<TimelineScreen> {
         ),
         decoration: BoxDecoration(
           color: selected
-              ? Colors.black
-              : Colors.grey.shade100,
+            ? colorScheme.onPrimary
+            : colorScheme.onSurfaceVariant,
           borderRadius: BorderRadius.circular(12),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: selected
-                ? Colors.white
-                : Colors.grey.shade700,
-            fontWeight: FontWeight.w600,
             fontSize: 15,
+            fontWeight:
+                selected ? FontWeight.w600 : FontWeight.w400,
+            color: selected
+                ? colorScheme.onSurface
+                : colorScheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -124,8 +143,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     return StreamBuilder<List<AtlasMemory>>(
       stream: _memoryService.getAllMemories(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState ==
-            ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
             child: CircularProgressIndicator(
               strokeWidth: 2,
@@ -149,6 +167,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   Widget _buildSharedTimeline() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -158,14 +178,15 @@ class _TimelineScreenState extends State<TimelineScreen> {
             Icon(
               Icons.people_outline,
               size: 56,
-              color: Colors.grey.shade400,
+              color: colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'Shared memories',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
@@ -174,7 +195,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
-                color: Colors.grey.shade600,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -194,8 +215,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
     final oldest = sortedMemories.first.date;
     final today = DateTime.now();
     final todayY = _dateToY(today, oldest);
-
-    final totalDays = today.difference(oldest).inDays;
 
     const double bottomPadding = 100.0;
 
@@ -219,31 +238,21 @@ class _TimelineScreenState extends State<TimelineScreen> {
         final width = constraints.maxWidth;
 
         return GestureDetector(
-          // Capture horizontal gestures so they don't reach
-          // the MainNavigationScreen's horizontal PageView.
           onHorizontalDragStart: (_) {},
           onHorizontalDragUpdate: (_) {},
           onHorizontalDragEnd: (_) {},
           child: InteractiveViewer(
-            transformationController:
-                _transformationController,
-
+            transformationController: _transformationController,
             minScale: _minScale,
             maxScale: _maxScale,
-
             panEnabled: true,
             panAxis: PanAxis.vertical,
-
             scaleEnabled: true,
-
-            boundaryMargin:
-                const EdgeInsets.symmetric(
+            boundaryMargin: const EdgeInsets.symmetric(
               vertical: 500,
             ),
-
             constrained: false,
             alignment: Alignment.topCenter,
-
             child: SizedBox(
               width: width,
               height: timelineHeight,
@@ -253,29 +262,29 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     width,
                     timelineHeight,
                   ),
-
                   ..._buildYearMarkers(
                     oldest,
                     today,
                     width,
                   ),
+                  ...sortedMemories.asMap().entries.map(
+                    (entry) {
+                      final index = entry.key;
+                      final memory = entry.value;
 
-                  ...sortedMemories.map(
-                    (memory) {
                       return _buildMemoryNode(
                         memory,
                         oldest,
                         width,
+                        index,
                       );
                     },
                   ),
-
                   _buildTodayMarker(
                     today,
                     oldest,
                     width,
                   ),
-
                   _buildFutureText(
                     today,
                     oldest,
@@ -301,8 +310,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
     _positionedInitially = true;
 
-    final screenHeight =
-        MediaQuery.of(context).size.height;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     final todayY = _dateToY(
       today,
@@ -316,9 +324,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
           ..scale(scale)
           ..translate(
             0.0,
-            -(todayY -
-                (screenHeight / scale) +
-                120),
+            -(todayY - (screenHeight / scale) + 120),
           );
   }
 
@@ -326,6 +332,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
     double width,
     double height,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Positioned(
       left: width / 2 - 1,
       top: 0,
@@ -333,7 +341,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
       child: Container(
         width: 2,
         height: height,
-        color: Colors.grey.shade300,
+        color: colorScheme.outlineVariant,
       ),
     );
   }
@@ -343,11 +351,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
     DateTime newest,
     double width,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
     final widgets = <Widget>[];
 
-    for (int year = oldest.year;
-        year <= newest.year;
-        year++) {
+    for (int year = oldest.year; year <= newest.year; year++) {
       final date = DateTime(year, 1, 1);
 
       if (date.isBefore(oldest)) {
@@ -373,30 +380,29 @@ class _TimelineScreenState extends State<TimelineScreen> {
               Container(
                 width: width / 2 - 40,
                 height: 1,
-                color: Colors.grey.shade200,
+                color: colorScheme.outlineVariant,
               ),
               Container(
                 width: 80,
                 alignment: Alignment.center,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: 10,
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius:
-                        BorderRadius.circular(20),
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Colors.grey.shade300,
+                      color: colorScheme.outline,
                     ),
                   ),
                   child: Text(
                     '$year',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -404,7 +410,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
               Expanded(
                 child: Container(
                   height: 1,
-                  color: Colors.grey.shade200,
+                  color: colorScheme.outlineVariant,
                 ),
               ),
             ],
@@ -420,13 +426,16 @@ class _TimelineScreenState extends State<TimelineScreen> {
     AtlasMemory memory,
     DateTime oldest,
     double width,
+    int index,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     final y = _dateToY(
       memory.date,
       oldest,
     );
 
-    final isLeft = memory.id.hashCode.isEven;
+    final isLeft = index.isEven;
 
     return Positioned(
       top: y - 42,
@@ -448,45 +457,39 @@ class _TimelineScreenState extends State<TimelineScreen> {
               ? MainAxisAlignment.end
               : MainAxisAlignment.start,
           children: [
-            if (!isLeft)
-              _buildTimelineDot(),
+            if (!isLeft) _buildTimelineDot(),
 
-            if (!isLeft)
-              const SizedBox(width: 10),
+            if (!isLeft) const SizedBox(width: 10),
 
             Flexible(
               child: Container(
-                padding:
-                    const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius:
-                      BorderRadius.circular(14),
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: Colors.grey.shade300,
+                    color: colorScheme.outline,
                   ),
                 ),
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       _formatDate(memory.date),
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.grey.shade500,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       memory.title,
                       maxLines: 2,
-                      overflow:
-                          TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
                         fontSize: 15,
-                        fontWeight:
-                            FontWeight.w600,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     if (memory.location.isNotEmpty) ...[
@@ -494,12 +497,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
                       Text(
                         memory.location,
                         maxLines: 1,
-                        overflow:
-                            TextOverflow.ellipsis,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11,
-                          color:
-                              Colors.grey.shade600,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -508,11 +509,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
               ),
             ),
 
-            if (isLeft)
-              const SizedBox(width: 10),
+            if (isLeft) const SizedBox(width: 10),
 
-            if (isLeft)
-              _buildTimelineDot(),
+            if (isLeft) _buildTimelineDot(),
           ],
         ),
       ),
@@ -520,15 +519,17 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   Widget _buildTimelineDot() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       width: 14,
       height: 14,
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: colorScheme.surface,
         shape: BoxShape.circle,
         border: Border.all(
-          color: Colors.white,
           width: 3,
+          color: colorScheme.primary,
         ),
       ),
     );
@@ -539,6 +540,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
     DateTime oldest,
     double width,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     final y = _dateToY(
       today,
       oldest,
@@ -558,17 +561,16 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 vertical: 4,
               ),
               decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius:
-                    BorderRadius.circular(10),
+                color: colorScheme.primary,
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: const Text(
+              child: Text(
                 'TODAY',
                 style: TextStyle(
-                  color: Colors.white,
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1,
+                  color: colorScheme.onPrimary,
                 ),
               ),
             ),
@@ -576,7 +578,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
             Expanded(
               child: Container(
                 height: 1,
-                color: Colors.black,
+                color: colorScheme.primary,
               ),
             ),
           ],
@@ -590,6 +592,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
     DateTime oldest,
     double width,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     final todayY = _dateToY(
       today,
       oldest,
@@ -599,24 +603,29 @@ class _TimelineScreenState extends State<TimelineScreen> {
       top: todayY + 970,
       left: 0,
       right: 0,
-      child: Container(
-        color: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Text("Where are you going? We can't predict the future!"),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+        ),
+        child: Text(
+          "Where are you going? We can't predict the future!",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 14,
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
       ),
     );
-
   }
 
   double _dateToY(
     DateTime date,
     DateTime oldest,
   ) {
-    final days =
-        date.difference(oldest).inDays;
+    final days = date.difference(oldest).inDays;
 
-    return 200 +
-        (days * _pixelsPerDay);
+    return 200 + (days * _pixelsPerDay);
   }
 
   String _formatDate(DateTime date) {
@@ -641,6 +650,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   Widget _buildEmptyState() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -650,14 +661,15 @@ class _TimelineScreenState extends State<TimelineScreen> {
             Icon(
               Icons.timeline_outlined,
               size: 56,
-              color: Colors.grey.shade400,
+              color: colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'Your timeline is empty',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
@@ -666,7 +678,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
-                color: Colors.grey.shade600,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -676,23 +688,27 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   Widget _buildErrorState() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline,
               size: 44,
+              color: colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Could not load your timeline.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
               ),
             ),
           ],

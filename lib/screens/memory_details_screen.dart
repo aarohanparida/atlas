@@ -63,7 +63,6 @@ class _MemoryDetailsScreenState
       _resolvedPhotoPaths = paths;
     });
 
-    // Preload all photos into Flutter's image cache.
     for (final photoPath in paths) {
       if (!mounted) return;
 
@@ -74,25 +73,17 @@ class _MemoryDetailsScreenState
     }
   }
 
-  Future<String> _resolvePhotoPath(
-    String storedPath,
-  ) async {
-    final directory =
-        await getApplicationDocumentsDirectory();
+  Future<String> _resolvePhotoPath(String storedPath) async {
+    final directory = await getApplicationDocumentsDirectory();
 
-    // New format:
-    // memory_photos/photo.jpg
     if (!storedPath.startsWith('/')) {
       return '${directory.path}/$storedPath';
     }
 
-    // Old format:
-    // /var/mobile/.../Documents/memory_photos/photo.jpg
     if (await File(storedPath).exists()) {
       return storedPath;
     }
 
-    // Try recovering the filename from an old path.
     final fileName = storedPath.split('/').last;
 
     return '${directory.path}/memory_photos/$fileName';
@@ -119,9 +110,7 @@ class _MemoryDetailsScreenState
         '${date.year}';
   }
 
-  void _handlePhotoScroll(
-    ScrollNotification notification,
-  ) {
+  void _handlePhotoScroll(ScrollNotification notification) {
     if (notification is ScrollStartNotification) {
       _lastHapticLevel = -1;
       return;
@@ -130,24 +119,15 @@ class _MemoryDetailsScreenState
     if (notification is ScrollUpdateNotification) {
       final metrics = notification.metrics;
 
-      if (metrics.viewportDimension <= 0) {
-        return;
-      }
+      if (metrics.viewportDimension <= 0) return;
 
-      final page =
-          metrics.pixels / metrics.viewportDimension;
-
+      final page = metrics.pixels / metrics.viewportDimension;
       final nearestPage = page.round();
+      final distance = (page - nearestPage).abs();
 
-      final distance =
-          (page - nearestPage).abs();
+      if (distance < 0.02) return;
 
-      if (distance < 0.02) {
-        return;
-      }
-
-      final progress =
-          (distance.clamp(0.0, 0.5) / 0.5);
+      final progress = distance.clamp(0.0, 0.5) / 0.5;
 
       int level;
 
@@ -174,7 +154,6 @@ class _MemoryDetailsScreenState
 
     if (notification is ScrollEndNotification) {
       _lastHapticLevel = -1;
-
       HapticFeedback.mediumImpact();
     }
   }
@@ -195,6 +174,8 @@ class _MemoryDetailsScreenState
   }
 
   Future<void> _deleteMemory() async {
+    final colorScheme = Theme.of(context).colorScheme;
+
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -206,20 +187,14 @@ class _MemoryDetailsScreenState
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context, false);
-              },
+              onPressed: () => Navigator.pop(context, false),
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.pop(context, true);
-              },
-              child: const Text(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(
                 'Delete',
-                style: TextStyle(
-                  color: Colors.red,
-                ),
+                style: TextStyle(color: colorScheme.error),
               ),
             ),
           ],
@@ -227,14 +202,10 @@ class _MemoryDetailsScreenState
       },
     );
 
-    if (shouldDelete != true) {
-      return;
-    }
+    if (shouldDelete != true) return;
 
     try {
-      await _memoryService.deleteMemory(
-        _memory.id,
-      );
+      await _memoryService.deleteMemory(_memory.id);
 
       for (final photoPath in _resolvedPhotoPaths) {
         final file = File(photoPath);
@@ -252,39 +223,40 @@ class _MemoryDetailsScreenState
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Could not delete this memory.',
-          ),
+          content: Text('Could not delete this memory.'),
         ),
       );
     }
   }
 
-  Widget _buildPhoto(String photoPath) {
+  Widget _buildPhoto(
+    String photoPath,
+    ColorScheme colorScheme,
+  ) {
     return Image.file(
       File(photoPath),
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
       gaplessPlayback: true,
-      errorBuilder: (
-        context,
-        error,
-        stackTrace,
-      ) {
+      errorBuilder: (context, error, stackTrace) {
         return Container(
-          color: Colors.grey.shade100,
-          child: const Center(
+          color: colorScheme.surfaceContainerHighest,
+          child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.broken_image_outlined,
                   size: 40,
+                  color: colorScheme.onSurfaceVariant,
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   'Photo could not be loaded',
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -294,21 +266,16 @@ class _MemoryDetailsScreenState
     );
   }
 
-  Widget _buildPhotos() {
+  Widget _buildPhotos(ColorScheme colorScheme) {
     if (_memory.photoPaths.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    // Wait for the paths to be resolved before displaying
-    // the PageView.
-    if (_resolvedPhotoPaths.length !=
-        _memory.photoPaths.length) {
+    if (_resolvedPhotoPaths.length != _memory.photoPaths.length) {
       return const SizedBox(
         height: 300,
         child: Center(
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-          ),
+          child: CircularProgressIndicator(strokeWidth: 2),
         ),
       );
     }
@@ -318,72 +285,94 @@ class _MemoryDetailsScreenState
         _handlePhotoScroll(notification);
         return false;
       },
-      child: SizedBox(
-        height: 300,
-        child: PageView.builder(
-          controller: _pageController,
-          itemCount: _resolvedPhotoPaths.length,
-          onPageChanged: (index) {
-            setState(() {
-              _currentPage = index;
-            });
-          },
-          itemBuilder: (context, index) {
-            return Padding(
-              padding: const EdgeInsets.only(
-                right: 8,
+      child: Column(
+        children: [
+          SizedBox(
+            height: 300,
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: _resolvedPhotoPaths.length,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentPage = index;
+                });
+              },
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: _buildPhoto(
+                      _resolvedPhotoPaths[index],
+                      colorScheme,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          if (_resolvedPhotoPaths.length > 1) ...[
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                _resolvedPhotoPaths.length,
+                (index) {
+                  final selected = index == _currentPage;
+
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: selected ? 18 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? colorScheme.primary
+                          : colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  );
+                },
               ),
-              child: ClipRRect(
-                borderRadius:
-                    BorderRadius.circular(20),
-                child: _buildPhoto(
-                  _resolvedPhotoPaths[index],
-                ),
-              ),
-            );
-          },
-        ),
+            ),
+          ],
+        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
+    final colorScheme = Theme.of(context).colorScheme;
 
+    return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
-        foregroundColor: Colors.black,
         title: const Text('Memory'),
         actions: [
           IconButton(
+            tooltip: 'Edit memory',
             onPressed: _editMemory,
-            icon: const Icon(
-              Icons.edit_outlined,
-            ),
+            icon: const Icon(Icons.edit_outlined),
           ),
           IconButton(
+            tooltip: 'Delete memory',
             onPressed: _deleteMemory,
-            icon: const Icon(
-              Icons.delete_outline,
-            ),
+            icon: const Icon(Icons.delete_outline),
           ),
         ],
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               _memory.title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 30,
                 fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
               ),
             ),
 
@@ -393,25 +382,26 @@ class _MemoryDetailsScreenState
               _formatDate(_memory.date),
               style: TextStyle(
                 fontSize: 15,
-                color: Colors.grey.shade600,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
 
             if (_memory.location.isNotEmpty) ...[
               const SizedBox(height: 6),
-
               Row(
                 children: [
                   Icon(
                     Icons.location_on_outlined,
                     size: 18,
-                    color: Colors.grey.shade600,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    _memory.location,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
+                  Expanded(
+                    child: Text(
+                      _memory.location,
+                      style: TextStyle(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ],
@@ -420,7 +410,7 @@ class _MemoryDetailsScreenState
 
             const SizedBox(height: 24),
 
-            _buildPhotos(),
+            _buildPhotos(colorScheme),
 
             if (_memory.photoPaths.isNotEmpty)
               const SizedBox(height: 24),
@@ -428,21 +418,22 @@ class _MemoryDetailsScreenState
             if (_memory.description.isNotEmpty) ...[
               Text(
                 _memory.description,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 17,
                   height: 1.5,
+                  color: colorScheme.onSurface,
                 ),
               ),
-
               const SizedBox(height: 24),
             ],
 
             if (_memory.people.isNotEmpty) ...[
-              const Text(
+              Text(
                 'People',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
                 ),
               ),
 
@@ -451,20 +442,22 @@ class _MemoryDetailsScreenState
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children:
-                    _memory.people.map((person) {
+                children: _memory.people.map((person) {
                   return Container(
-                    padding:
-                        const EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius:
-                          BorderRadius.circular(20),
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(person),
+                    child: Text(
+                      person,
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
                   );
                 }).toList(),
               ),
@@ -477,21 +470,15 @@ class _MemoryDetailsScreenState
               height: 50,
               child: OutlinedButton.icon(
                 onPressed: _editMemory,
-                icon: const Icon(
-                  Icons.edit_outlined,
-                ),
-                label: const Text(
-                  'Edit Memory',
-                ),
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('Edit Memory'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.black,
-                  side: const BorderSide(
-                    color: Colors.black,
+                  foregroundColor: colorScheme.primary,
+                  side: BorderSide(
+                    color: colorScheme.outline,
                   ),
-                  shape:
-                      RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
               ),
@@ -504,24 +491,15 @@ class _MemoryDetailsScreenState
               height: 50,
               child: OutlinedButton.icon(
                 onPressed: _deleteMemory,
-                icon: const Icon(
-                  Icons.delete_outline,
-                  color: Colors.red,
-                ),
-                label: const Text(
-                  'Delete Memory',
-                  style: TextStyle(
-                    color: Colors.red,
-                  ),
-                ),
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Delete Memory'),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(
-                    color: Colors.red,
+                  foregroundColor: colorScheme.error,
+                  side: BorderSide(
+                    color: colorScheme.error,
                   ),
-                  shape:
-                      RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
               ),

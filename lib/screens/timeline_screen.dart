@@ -110,18 +110,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
         ),
         decoration: BoxDecoration(
           color: selected
-            ? colorScheme.onPrimary
-            : colorScheme.onSurfaceVariant,
+              ? colorScheme.primary
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ]
-              : null,
         ),
         child: Text(
           label,
@@ -131,7 +122,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
             fontWeight:
                 selected ? FontWeight.w600 : FontWeight.w400,
             color: selected
-                ? colorScheme.onSurface
+                ? colorScheme.onPrimary
                 : colorScheme.onSurfaceVariant,
           ),
         ),

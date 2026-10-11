@@ -34,7 +34,7 @@ class AtlasApp extends StatelessWidget {
    return MaterialApp(
      debugShowCheckedModeBanner: false,
      title: 'Atlas',
-     theme: AppTheme.light,
+     theme: AppTheme.dark,
      home: const AuthGate(),
    );
  }

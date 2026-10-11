@@ -1,35 +1,20 @@
 import 'package:atlas/widgets/globe_video.dart';
 import 'package:flutter/material.dart';
- 
-import '../theme/app_colors.dart';
+
 import '../theme/app_text.dart';
 import 'create_memory_screen.dart';
-import 'timeline_screen.dart';
-import 'search_screen.dart';
-import 'profile_screen.dart';
-import '../services/user_service.dart';
 import 'memory_details_screen.dart';
-
+import '../services/user_service.dart';
 import '../models/atlas_memory.dart';
 import '../services/memory_service.dart';
- 
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-  
+
   String _formatMemoryDate(DateTime date) {
     const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
 
     return '${months[date.month - 1]} ${date.day}';
@@ -37,34 +22,27 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-      return Scaffold(
- 
+    return Scaffold(
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
- 
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
- 
+          child: ListView(
             children: [
- 
               const SizedBox(height: 20),
- 
+
               Text(
-                "Good Morning",
+                'Good Morning',
                 style: AppText.subtitle,
               ),
- 
+
               const SizedBox(height: 4),
- 
+
               FutureBuilder<String>(
                 future: UserService().getFirstName(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Text(
-                      '',
-                      style: AppText.title,
-                    );
+                  if (snapshot.connectionState ==
+                      ConnectionState.waiting) {
+                    return Text('', style: AppText.title);
                   }
 
                   return Text(
@@ -73,14 +51,14 @@ class HomeScreen extends StatelessWidget {
                   );
                 },
               ),
- 
+
               const SizedBox(height: 24),
- 
+
               const GlobeVideo(),
- 
+
               TextField(
                 decoration: InputDecoration(
-                  hintText: "Search your Atlas...",
+                  hintText: 'Search your Atlas...',
                   prefixIcon: const Icon(Icons.search),
                   filled: true,
                   border: OutlineInputBorder(
@@ -89,41 +67,43 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
- 
+
               const SizedBox(height: 24),
- 
+
               SizedBox(
                 width: double.infinity,
                 height: 56,
- 
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.add),
-                  label: const Text("New Memory"),
+                  label: const Text('New Memory'),
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            const CreateMemoryScreen(),
+                        builder: (_) => const CreateMemoryScreen(),
                       ),
                     );
                   },
                 ),
               ),
- 
-              const SizedBox(height: 36),
- 
+
+              const SizedBox(height: 20),
+
+              // Daily Memories feature
+              const OnThisDaySection(),
+
+              const SizedBox(height: 20),
+
               Text(
-                "Recent Memories",
+                'Recent Memories',
                 style: AppText.title.copyWith(fontSize: 24),
               ),
- 
+
               const SizedBox(height: 16),
- 
+
               Expanded(
                 child: StreamBuilder<List<AtlasMemory>>(
                   stream: MemoryService().getRecentMemories(),
-
                   builder: (context, snapshot) {
                     if (snapshot.connectionState ==
                         ConnectionState.waiting) {
@@ -134,14 +114,11 @@ class HomeScreen extends StatelessWidget {
 
                     if (snapshot.hasError) {
                       return const Center(
-                        child: Text(
-                          'Could not load your memories.',
-                        ),
+                        child: Text('Could not load your memories.'),
                       );
                     }
 
-                    final memories =
-                        snapshot.data ?? [];
+                    final memories = snapshot.data ?? [];
 
                     if (memories.isEmpty) {
                       return Center(
@@ -153,9 +130,7 @@ class HomeScreen extends StatelessWidget {
                               size: 42,
                               color: Colors.grey.shade400,
                             ),
-
                             const SizedBox(height: 12),
-
                             const Text(
                               'No memories yet.',
                               style: TextStyle(
@@ -163,9 +138,7 @@ class HomeScreen extends StatelessWidget {
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-
                             const SizedBox(height: 5),
-
                             Text(
                               'Create your first memory.',
                               style: TextStyle(
@@ -179,7 +152,6 @@ class HomeScreen extends StatelessWidget {
 
                     return ListView.builder(
                       itemCount: memories.length,
-
                       itemBuilder: (context, index) {
                         final memory = memories[index];
 
@@ -200,6 +172,8 @@ class HomeScreen extends StatelessWidget {
                           ),
                         );
                       },
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
                     );
                   },
                 ),
@@ -211,37 +185,253 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
- 
+
+class OnThisDaySection extends StatefulWidget {
+  const OnThisDaySection({super.key});
+
+  @override
+  State<OnThisDaySection> createState() => _OnThisDaySectionState();
+}
+
+class _OnThisDaySectionState extends State<OnThisDaySection> {
+  late final Stream<List<AtlasMemory>> _memoriesStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _memoriesStream = MemoryService().getAllMemories();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final colors = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.auto_awesome,
+              size: 21,
+              color: colors.primary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'On This Day',
+              style: AppText.title.copyWith(fontSize: 20),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 10),
+
+        SizedBox(
+          height: 94,
+          child: StreamBuilder<List<AtlasMemory>>(
+            stream: _memoriesStream,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return _DailyMemoryEmptyCard(
+                  message: 'Could not load daily memories.',
+                );
+              }
+
+              if (snapshot.connectionState ==
+                  ConnectionState.waiting) {
+                return const Center(
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ),
+                  ),
+                );
+              }
+
+              final memories = (snapshot.data ?? [])
+                  .where((memory) {
+                    return memory.date.month == today.month &&
+                        memory.date.day == today.day &&
+                        memory.date.year < today.year;
+                  })
+                  .toList()
+                ..sort(
+                  (a, b) => b.date.compareTo(a.date),
+                );
+
+              if (memories.isEmpty) {
+                return const _DailyMemoryEmptyCard(
+                  message: 'No memories from this day yet.',
+                );
+              }
+
+              return ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: memories.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  final memory = memories[index];
+
+                  return SizedBox(
+                    width: 240,
+                    child: Card(
+                      margin: EdgeInsets.zero,
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => MemoryDetailsScreen(
+                                memory: memory,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: colors.primaryContainer,
+                                  borderRadius:
+                                      BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.photo_library_outlined,
+                                  color: colors.onPrimaryContainer,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.center,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      memory.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${_monthDay(memory.date)} · ${memory.date.year}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: colors.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(
+                                Icons.chevron_right,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _monthDay(DateTime date) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+
+    return '${months[date.month - 1]} ${date.day}';
+  }
+}
+
+class _DailyMemoryEmptyCard extends StatelessWidget {
+  const _DailyMemoryEmptyCard({
+    required this.message,
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.calendar_today_outlined,
+            color: colors.onSurfaceVariant,
+            size: 22,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: colors.onSurfaceVariant,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class MemoryTile extends StatelessWidget {
- 
   const MemoryTile({
     super.key,
     required this.title,
     required this.date,
   });
- 
+
   final String title;
   final String date;
- 
+
   @override
   Widget build(BuildContext context) {
- 
     return Card(
- 
       margin: const EdgeInsets.only(bottom: 16),
- 
       child: ListTile(
- 
         leading: const CircleAvatar(
           child: Icon(Icons.photo),
         ),
- 
         title: Text(title),
- 
         subtitle: Text(date),
- 
         trailing: const Icon(Icons.chevron_right),
- 
       ),
     );
   }

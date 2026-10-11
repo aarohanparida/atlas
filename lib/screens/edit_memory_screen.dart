@@ -55,7 +55,6 @@ class _EditMemoryScreenState extends State<EditMemoryScreen> {
     _descriptionController.dispose();
     _locationController.dispose();
     _peopleController.dispose();
-
     super.dispose();
   }
 
@@ -67,7 +66,7 @@ class _EditMemoryScreenState extends State<EditMemoryScreen> {
       lastDate: DateTime.now(),
     );
 
-    if (selectedDate != null) {
+    if (selectedDate != null && mounted) {
       setState(() {
         _selectedDate = selectedDate;
       });
@@ -146,12 +145,11 @@ class _EditMemoryScreenState extends State<EditMemoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
-        foregroundColor: Colors.black,
         title: const Text('Edit Memory'),
       ),
       body: SingleChildScrollView(
@@ -161,41 +159,39 @@ class _EditMemoryScreenState extends State<EditMemoryScreen> {
           children: [
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Title',
-                border: OutlineInputBorder(),
-              ),
+              textCapitalization: TextCapitalization.sentences,
+              style: TextStyle(color: colorScheme.onSurface),
+              decoration: _inputDecoration('Title'),
             ),
 
             const SizedBox(height: 20),
 
             TextField(
               controller: _descriptionController,
+              textCapitalization: TextCapitalization.sentences,
               maxLines: 5,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                border: OutlineInputBorder(),
-              ),
+              style: TextStyle(color: colorScheme.onSurface),
+              decoration: _inputDecoration('Description'),
             ),
 
             const SizedBox(height: 20),
 
             TextField(
               controller: _locationController,
-              decoration: const InputDecoration(
-                labelText: 'Location',
-                border: OutlineInputBorder(),
-              ),
+              textCapitalization: TextCapitalization.words,
+              style: TextStyle(color: colorScheme.onSurface),
+              decoration: _inputDecoration('Location'),
             ),
 
             const SizedBox(height: 20),
 
             TextField(
               controller: _peopleController,
-              decoration: const InputDecoration(
-                labelText: 'People',
-                hintText: 'John, Sarah, Mike',
-                border: OutlineInputBorder(),
+              textCapitalization: TextCapitalization.words,
+              style: TextStyle(color: colorScheme.onSurface),
+              decoration: _inputDecoration(
+                'People',
+                hint: 'John, Sarah, Mike',
               ),
             ),
 
@@ -203,23 +199,33 @@ class _EditMemoryScreenState extends State<EditMemoryScreen> {
 
             InkWell(
               onTap: _chooseDate,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(18),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Colors.grey.shade400,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(18),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.calendar_today_outlined),
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      color: colorScheme.onSurface,
+                    ),
                     const SizedBox(width: 12),
-                    Text(
-                      _formattedDate(),
-                      style: const TextStyle(fontSize: 16),
+                    Expanded(
+                      child: Text(
+                        _formattedDate(),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ],
                 ),
@@ -230,9 +236,7 @@ class _EditMemoryScreenState extends State<EditMemoryScreen> {
               const SizedBox(height: 16),
               Text(
                 _error!,
-                style: const TextStyle(
-                  color: Colors.red,
-                ),
+                style: TextStyle(color: colorScheme.error),
               ),
             ],
 
@@ -240,23 +244,15 @@ class _EditMemoryScreenState extends State<EditMemoryScreen> {
 
             SizedBox(
               width: double.infinity,
-              height: 52,
+              height: 56,
               child: ElevatedButton(
                 onPressed: _saving ? null : _saveChanges,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
                 child: _saving
                     ? const SizedBox(
                         width: 22,
                         height: 22,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
                         ),
                       )
                     : const Text(
@@ -270,6 +266,30 @@ class _EditMemoryScreenState extends State<EditMemoryScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(
+    String label, {
+    String? hint,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      filled: true,
+      fillColor: colorScheme.surfaceContainerHighest,
+      labelStyle: TextStyle(
+        color: colorScheme.onSurfaceVariant,
+      ),
+      hintStyle: TextStyle(
+        color: colorScheme.onSurfaceVariant,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
       ),
     );
   }

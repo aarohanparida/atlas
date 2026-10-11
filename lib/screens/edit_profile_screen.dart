@@ -38,6 +38,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (widget.currentBirthday is Timestamp) {
       _birthday =
           (widget.currentBirthday as Timestamp).toDate();
+    } else if (widget.currentBirthday is DateTime) {
+      _birthday = widget.currentBirthday as DateTime;
     }
   }
 
@@ -49,16 +51,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _chooseBirthday() async {
     final now = DateTime.now();
+    final initialDate = _birthday ?? DateTime(now.year - 15);
 
     final selectedDate = await showDatePicker(
       context: context,
-      initialDate:
-          _birthday ?? DateTime(now.year - 15),
+      initialDate: initialDate.isAfter(now) ? now : initialDate,
       firstDate: DateTime(1900),
       lastDate: now,
     );
 
-    if (selectedDate != null) {
+    if (selectedDate != null && mounted) {
       setState(() {
         _birthday = selectedDate;
       });
@@ -115,20 +117,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
-
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          'Edit Profile',
-          style: TextStyle(
-            color: Colors.black,
-          ),
-        ),
+        title: const Text('Edit Profile'),
       ),
-
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -140,15 +135,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             children: [
               TextField(
                 controller: _nameController,
-                textCapitalization:
-                    TextCapitalization.words,
+                textCapitalization: TextCapitalization.words,
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                ),
                 decoration: InputDecoration(
                   labelText: 'Name',
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: colorScheme.surfaceContainerHighest,
+                  labelStyle: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                   border: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(18),
                     borderSide: BorderSide.none,
                   ),
                 ),
@@ -157,34 +156,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               const SizedBox(height: 16),
 
               OutlinedButton(
-                onPressed: _chooseBirthday,
+                onPressed: _loading ? null : _chooseBirthday,
                 style: OutlinedButton.styleFrom(
-                  minimumSize:
-                      const Size.fromHeight(56),
+                  minimumSize: const Size.fromHeight(56),
                 ),
                 child: Text(_birthdayText()),
               ),
 
               if (_birthday != null)
                 TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _birthday = null;
-                    });
-                  },
-                  child: const Text(
-                    'Remove birthday',
-                  ),
+                  onPressed: _loading
+                      ? null
+                      : () {
+                          setState(() {
+                            _birthday = null;
+                          });
+                        },
+                  child: const Text('Remove birthday'),
                 ),
 
               if (_error != null) ...[
                 const SizedBox(height: 12),
-
                 Text(
                   _error!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.red,
+                  style: TextStyle(
+                    color: colorScheme.error,
                   ),
                 ),
               ],
@@ -194,20 +191,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               SizedBox(
                 height: 56,
                 child: ElevatedButton(
-                  onPressed:
-                      _loading ? null : _save,
+                  onPressed: _loading ? null : _save,
                   child: _loading
                       ? const SizedBox(
                           width: 22,
                           height: 22,
-                          child:
-                              CircularProgressIndicator(
+                          child: CircularProgressIndicator(
                             strokeWidth: 2,
                           ),
                         )
-                      : const Text(
-                          'Save Changes',
-                        ),
+                      : const Text('Save Changes'),
                 ),
               ),
             ],

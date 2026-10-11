@@ -45,7 +45,6 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
     _descriptionController.dispose();
     _locationController.dispose();
     _peopleController.dispose();
-
     super.dispose();
   }
 
@@ -65,57 +64,55 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
   }
 
   Future<void> _saveMemory() async {
-  final title = _titleController.text.trim();
+    final title = _titleController.text.trim();
 
-  if (title.isEmpty) {
-    setState(() {
-      _error = 'Give your memory a title.';
-    });
-    return;
-  }
-
-  setState(() {
-    _saving = true;
-    _error = null;
-  });
-
-  try {
-    final people = _peopleController.text
-        .split(',')
-        .map((person) => person.trim())
-        .where((person) => person.isNotEmpty)
-        .toList();
-
-    // Save the selected photos onto the phone first
-    final photoPaths = await _savePhotosLocally();
-
-    // Then save the memory info + photo paths to Firestore
-    await _memoryService.createMemory(
-      title: title,
-      description: _descriptionController.text.trim(),
-      date: _selectedDate,
-      location: _locationController.text.trim(),
-      people: people,
-      photoPaths: photoPaths,
-    );
-
-    if (!mounted) return;
-
-    Navigator.pop(context);
-  } catch (e) {
-    if (!mounted) return;
-
-    setState(() {
-      _error = 'Could not save this memory. Please try again.';
-    });
-  } finally {
-    if (mounted) {
+    if (title.isEmpty) {
       setState(() {
-        _saving = false;
+        _error = 'Give your memory a title.';
       });
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+
+    try {
+      final people = _peopleController.text
+          .split(',')
+          .map((person) => person.trim())
+          .where((person) => person.isNotEmpty)
+          .toList();
+
+      final photoPaths = await _savePhotosLocally();
+
+      await _memoryService.createMemory(
+        title: title,
+        description: _descriptionController.text.trim(),
+        date: _selectedDate,
+        location: _locationController.text.trim(),
+        people: people,
+        photoPaths: photoPaths,
+      );
+
+      if (!mounted) return;
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _error = 'Could not save this memory. Please try again.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+        });
+      }
     }
   }
-}
 
   String _formattedDate() {
     const months = [
@@ -138,18 +135,16 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
         '${_selectedDate.year}';
   }
 
-  // photo picker method
   Future<void> _pickPhotos() async {
-    final List<XFile> images = await _picker.pickMultiImage();
+    final images = await _picker.pickMultiImage();
 
-    if (images.isNotEmpty) {
+    if (images.isNotEmpty && mounted) {
       setState(() {
         _selectedImages = images;
       });
     }
   }
 
-  // image save method locally
   Future<List<String>> _savePhotosLocally() async {
     final directory = await getApplicationDocumentsDirectory();
 
@@ -174,12 +169,6 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
 
       await File(image.path).copy(newPath);
 
-      final exists = await File(newPath).exists();
-
-      print('ORIGINAL: ${image.path}');
-      print('SAVED: $newPath');
-      print('EXISTS: $exists');
-
       savedPaths.add('memory_photos/$fileName');
     }
 
@@ -188,20 +177,13 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
-
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          'New Memory',
-          style: TextStyle(
-            color: Colors.black,
-          ),
-        ),
+        title: const Text('New Memory'),
       ),
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(
@@ -209,13 +191,14 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
             vertical: 20,
           ),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextField(
                 controller: _titleController,
-                textCapitalization:
-                    TextCapitalization.sentences,
+                textCapitalization: TextCapitalization.sentences,
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                ),
                 decoration: _inputDecoration(
                   'Title',
                   'Rhode Island Trip',
@@ -226,9 +209,11 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
 
               TextField(
                 controller: _descriptionController,
-                textCapitalization:
-                    TextCapitalization.sentences,
+                textCapitalization: TextCapitalization.sentences,
                 maxLines: 4,
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                ),
                 decoration: _inputDecoration(
                   'Description',
                   'What made this memory special?',
@@ -239,22 +224,21 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
 
               InkWell(
                 onTap: _chooseDate,
-                borderRadius:
-                    BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(18),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 18,
                     vertical: 18,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius:
-                        BorderRadius.circular(18),
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(18),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.calendar_today_outlined,
+                        color: colorScheme.onSurface,
                       ),
 
                       const SizedBox(width: 14),
@@ -262,14 +246,16 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
                       Expanded(
                         child: Text(
                           _formattedDate(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                       ),
 
-                      const Icon(
+                      Icon(
                         Icons.chevron_right,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ],
                   ),
@@ -280,8 +266,10 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
 
               TextField(
                 controller: _locationController,
-                textCapitalization:
-                    TextCapitalization.words,
+                textCapitalization: TextCapitalization.words,
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                ),
                 decoration: _inputDecoration(
                   'Location',
                   'Newport, Rhode Island',
@@ -292,8 +280,10 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
 
               TextField(
                 controller: _peopleController,
-                textCapitalization:
-                    TextCapitalization.words,
+                textCapitalization: TextCapitalization.words,
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                ),
                 decoration: _inputDecoration(
                   'People',
                   'David, Sarah, Alex',
@@ -306,14 +296,14 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
                 'Separate people with commas.',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey.shade600,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
 
               const SizedBox(height: 20),
 
               OutlinedButton.icon(
-                onPressed: _pickPhotos,
+                onPressed: _saving ? null : _pickPhotos,
                 icon: const Icon(
                   Icons.photo_library_outlined,
                 ),
@@ -361,13 +351,13 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
                               child: Container(
                                 width: 28,
                                 height: 28,
-                                decoration: const BoxDecoration(
-                                  color: Colors.black,
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.close,
-                                  color: Colors.white,
+                                  color: colorScheme.onPrimary,
                                   size: 18,
                                 ),
                               ),
@@ -386,8 +376,8 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
                 Text(
                   _error!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.red,
+                  style: TextStyle(
+                    color: colorScheme.error,
                   ),
                 ),
               ],
@@ -397,20 +387,16 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
               SizedBox(
                 height: 56,
                 child: ElevatedButton(
-                  onPressed:
-                      _saving ? null : _saveMemory,
+                  onPressed: _saving ? null : _saveMemory,
                   child: _saving
                       ? const SizedBox(
                           width: 22,
                           height: 22,
-                          child:
-                              CircularProgressIndicator(
+                          child: CircularProgressIndicator(
                             strokeWidth: 2,
                           ),
                         )
-                      : const Text(
-                          'Save Memory',
-                        ),
+                      : const Text('Save Memory'),
                 ),
               ),
 
@@ -426,11 +412,19 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
     String label,
     String hint,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return InputDecoration(
       labelText: label,
       hintText: hint,
       filled: true,
-      fillColor: Colors.grey.shade100,
+      fillColor: colorScheme.surfaceContainerHighest,
+      labelStyle: TextStyle(
+        color: colorScheme.onSurfaceVariant,
+      ),
+      hintStyle: TextStyle(
+        color: colorScheme.onSurfaceVariant,
+      ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
         borderSide: BorderSide.none,

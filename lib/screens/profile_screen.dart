@@ -30,11 +30,17 @@ class ProfileScreen extends StatelessWidget {
   }
 
   String _formatBirthday(dynamic birthday) {
-    if (birthday is! Timestamp) {
-      return 'Not set';
+    DateTime? date;
+
+    if (birthday is Timestamp) {
+      date = birthday.toDate();
+    } else if (birthday is DateTime) {
+      date = birthday;
     }
 
-    final date = birthday.toDate();
+    if (date == null) {
+      return 'Not set';
+    }
 
     const months = [
       'January',
@@ -71,27 +77,21 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firebaseUser = FirebaseAuth.instance.currentUser;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
-
         title: const Text(
           'Profile',
           style: TextStyle(
-            color: Colors.black,
             fontWeight: FontWeight.w600,
           ),
         ),
       ),
-
       body: StreamBuilder<Map<String, dynamic>?>(
         stream: UserService().getProfileStream(),
-
         builder: (context, snapshot) {
           if (snapshot.connectionState ==
               ConnectionState.waiting) {
@@ -101,9 +101,12 @@ class ProfileScreen extends StatelessWidget {
           }
 
           if (snapshot.hasError) {
-            return const Center(
+            return Center(
               child: Text(
                 'Could not load profile.',
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                ),
               ),
             );
           }
@@ -113,9 +116,7 @@ class ProfileScreen extends StatelessWidget {
           final fullName =
               data?['name'] as String? ?? 'Atlas User';
 
-          final email =
-              firebaseUser?.email ?? 'No email';
-
+          final email = firebaseUser?.email ?? 'No email';
           final birthday = data?['birthday'];
 
           return SingleChildScrollView(
@@ -123,16 +124,15 @@ class ProfileScreen extends StatelessWidget {
               horizontal: 24,
               vertical: 24,
             ),
-
             child: Column(
               children: [
                 CircleAvatar(
                   radius: 52,
-                  backgroundColor: Colors.black,
+                  backgroundColor: colorScheme.primary,
                   child: Text(
                     _getInitials(fullName),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: colorScheme.onPrimary,
                       fontSize: 32,
                       fontWeight: FontWeight.w500,
                     ),
@@ -143,7 +143,8 @@ class ProfileScreen extends StatelessWidget {
 
                 Text(
                   fullName,
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
                     fontSize: 26,
                     fontWeight: FontWeight.w600,
                   ),
@@ -156,8 +157,9 @@ class ProfileScreen extends StatelessWidget {
                   email,
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey.shade600,
+                    color: colorScheme.onSurfaceVariant,
                   ),
+                  textAlign: TextAlign.center,
                 ),
 
                 const SizedBox(height: 20),
@@ -183,17 +185,17 @@ class ProfileScreen extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(20),
                   ),
-
                   child: Column(
                     crossAxisAlignment:
                         CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'ABOUT YOU',
                         style: TextStyle(
+                          color: colorScheme.onSurface,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1.2,
@@ -202,11 +204,11 @@ class ProfileScreen extends StatelessWidget {
 
                       const SizedBox(height: 20),
 
-                      const Text(
+                      Text(
                         'Birthday',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
 
@@ -214,7 +216,8 @@ class ProfileScreen extends StatelessWidget {
 
                       Text(
                         _formatBirthday(birthday),
-                        style: const TextStyle(
+                        style: TextStyle(
+                          color: colorScheme.onSurface,
                           fontSize: 17,
                           fontWeight: FontWeight.w500,
                         ),
@@ -240,8 +243,7 @@ class ProfileScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            const SettingsScreen(),
+                        builder: (_) => const SettingsScreen(),
                       ),
                     );
                   },
@@ -253,9 +255,7 @@ class ProfileScreen extends StatelessWidget {
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 8,
                   ),
-                  leading: const Icon(
-                    Icons.logout,
-                  ),
+                  leading: const Icon(Icons.logout),
                   title: const Text('Sign Out'),
                   onTap: () => _signOut(context),
                 ),

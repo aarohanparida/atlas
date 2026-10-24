@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import '../../services/user_service.dart';
 import '../permissions/photos_permission_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -38,7 +38,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       lastDate: now,
     );
 
-    if (selectedDate != null) {
+    if (selectedDate != null && mounted) {
       setState(() {
         _birthday = selectedDate;
       });
@@ -52,7 +52,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       setState(() {
         _error = 'Please enter your full name.';
       });
-
       return;
     }
 
@@ -98,37 +97,44 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
+    final backgroundColor = theme.scaffoldBackgroundColor;
+    final textColor = colors.onSurface;
+    final secondaryTextColor = colors.onSurfaceVariant;
+    final fieldColor = colors.surfaceContainerHighest;
+
+    return Scaffold(
+      backgroundColor: backgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: 28,
           ),
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
 
-              const Text(
+              Text(
                 'Make Atlas yours.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 34,
                   fontWeight: FontWeight.w300,
+                  color: textColor,
                 ),
               ),
 
               const SizedBox(height: 12),
 
-              const Text(
+              Text(
                 'Tell us a little about you.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 17,
-                  color: Colors.grey,
+                  color: secondaryTextColor,
                 ),
               ),
 
@@ -137,13 +143,31 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               TextField(
                 controller: _nameController,
                 textCapitalization: TextCapitalization.words,
+                style: TextStyle(color: textColor),
+                cursorColor: colors.primary,
                 decoration: InputDecoration(
                   labelText: 'Full Name',
+                  labelStyle: TextStyle(
+                    color: secondaryTextColor,
+                  ),
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: fieldColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(18),
                     borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: colors.outlineVariant,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: colors.primary,
+                      width: 1.5,
+                    ),
                   ),
                 ),
               ),
@@ -151,9 +175,16 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               const SizedBox(height: 16),
 
               OutlinedButton(
-                onPressed: _chooseBirthday,
+                onPressed: _loading ? null : _chooseBirthday,
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(56),
+                  foregroundColor: textColor,
+                  side: BorderSide(
+                    color: colors.outlineVariant,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                 ),
                 child: Text(
                   _birthday == null
@@ -164,12 +195,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
               if (_error != null) ...[
                 const SizedBox(height: 15),
-
                 Text(
                   _error!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.red,
+                  style: TextStyle(
+                    color: colors.error,
                   ),
                 ),
               ],
@@ -180,9 +210,22 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 height: 56,
                 child: ElevatedButton(
                   onPressed: _loading ? null : _continue,
-
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colors.primary,
+                    foregroundColor: colors.onPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
                   child: _loading
-                      ? const CircularProgressIndicator()
+                      ? SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: colors.onPrimary,
+                          ),
+                        )
                       : const Text('Continue'),
                 ),
               ),

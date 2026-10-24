@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'on_this_day_reminder_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -29,11 +30,10 @@ class SettingsScreen extends StatelessWidget {
               color: colorScheme.onSurfaceVariant,
             ),
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Notification settings are coming soon.',
-                  ),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const OnThisDayReminderScreen(),
                 ),
               );
             },

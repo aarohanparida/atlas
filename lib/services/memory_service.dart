@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/atlas_memory.dart';
+import 'notification_service.dart';
 
 class MemoryService {
   final FirebaseFirestore _firestore =
@@ -46,6 +47,9 @@ class MemoryService {
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
+
+    await NotificationService.instance
+    .refreshSmartOnThisDayReminders();
   }
 
   Stream<List<AtlasMemory>> getRecentMemories() {

@@ -41,6 +41,9 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Atlas uses your photos to add them to your memories.</string>
 
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Atlas uses your photo library to find photos that match your memories.</string>
+
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

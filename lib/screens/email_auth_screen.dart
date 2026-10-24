@@ -3,9 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../services/auth.dart';
+import '../services/notification_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text.dart';
-import 'home_screen.dart';
+import '../widgets/auth_gate.dart';
+
 
 class EmailAuthScreen extends StatefulWidget {
   const EmailAuthScreen({super.key});
@@ -17,8 +19,10 @@ class EmailAuthScreen extends StatefulWidget {
 class _EmailAuthScreenState extends State<EmailAuthScreen> {
   final Auth _auth = Auth();
 
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _emailController =
+      TextEditingController();
+  final TextEditingController _passwordController =
+      TextEditingController();
 
   bool _isLogin = true;
   bool _isLoading = false;
@@ -60,6 +64,14 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
         );
       }
 
+      // Refresh reminders without blocking authentication on failure.
+      try {
+        await NotificationService.instance
+            .refreshSmartOnThisDayReminders();
+      } catch (e) {
+        debugPrint('Could not refresh On This Day reminders: $e');
+      }
+
       if (!mounted) return;
 
       HapticFeedback.lightImpact();
@@ -67,10 +79,11 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-          builder: (_) => const HomeScreen(),
+          builder: (_) => const AuthGate(),
         ),
         (route) => false,
       );
+
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage = _getErrorMessage(e.code);
@@ -110,15 +123,24 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
+    final backgroundColor = theme.scaffoldBackgroundColor;
+    final surfaceColor = theme.colorScheme.surfaceContainerHighest;
+    final textColor = theme.colorScheme.onSurface;
+    final hintColor = theme.colorScheme.onSurfaceVariant;
+    final errorColor = theme.colorScheme.error;
+
+    return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: backgroundColor,
+        foregroundColor: textColor,
         elevation: 0,
+        scrolledUnderElevation: 0,
         automaticallyImplyLeading: true,
       ),
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -129,7 +151,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
 
               Text(
                 _isLogin ? 'Welcome back.' : 'Create your Atlas.',
-                style: AppText.title,
+                style: AppText.title.copyWith(
+                  color: textColor,
+                ),
                 textAlign: TextAlign.center,
               ),
 
@@ -139,7 +163,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                 _isLogin
                     ? 'Sign in to continue to your memories.'
                     : 'Start building your personal Atlas.',
-                style: AppText.subtitle,
+                style: AppText.subtitle.copyWith(
+                  color: hintColor,
+                ),
                 textAlign: TextAlign.center,
               ),
 
@@ -149,14 +175,33 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,
+                style: TextStyle(color: textColor),
+                cursorColor: theme.colorScheme.primary,
                 decoration: InputDecoration(
                   labelText: 'Email',
                   hintText: 'you@example.com',
+                  labelStyle: TextStyle(color: hintColor),
+                  hintStyle: TextStyle(
+                    color: hintColor.withValues(alpha: 0.7),
+                  ),
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: surfaceColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(18),
                     borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.outlineVariant,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.primary,
+                      width: 1.5,
+                    ),
                   ),
                 ),
               ),
@@ -166,13 +211,29 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
               TextField(
                 controller: _passwordController,
                 obscureText: true,
+                style: TextStyle(color: textColor),
+                cursorColor: theme.colorScheme.primary,
                 decoration: InputDecoration(
                   labelText: 'Password',
+                  labelStyle: TextStyle(color: hintColor),
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: surfaceColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(18),
                     borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.outlineVariant,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.primary,
+                      width: 1.5,
+                    ),
                   ),
                 ),
               ),
@@ -183,7 +244,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                 Text(
                   _errorMessage,
                   style: TextStyle(
-                    color: Colors.red.shade700,
+                    color: errorColor,
                     fontSize: 14,
                   ),
                   textAlign: TextAlign.center,
@@ -194,13 +255,23 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
               SizedBox(
                 height: 56,
                 child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                    disabledBackgroundColor:
+                        theme.colorScheme.primary.withValues(alpha: 0.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
                   onPressed: _isLoading ? null : _submit,
                   child: _isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 22,
                           width: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
+                            color: theme.colorScheme.onPrimary,
                           ),
                         )
                       : Text(
@@ -212,6 +283,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
               const SizedBox(height: 20),
 
               TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: theme.colorScheme.primary,
+                ),
                 onPressed: _isLoading
                     ? null
                     : () {

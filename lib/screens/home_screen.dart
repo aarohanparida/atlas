@@ -7,6 +7,7 @@ import 'memory_details_screen.dart';
 import '../services/user_service.dart';
 import '../models/atlas_memory.dart';
 import '../services/memory_service.dart';
+import 'photo_discovery_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -80,7 +81,7 @@ class HomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const CreateMemoryScreen(),
+                        builder: (_) => const PhotoDiscoveryScreen(),
                       ),
                     );
                   },

@@ -4,11 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+import 'package:photo_manager/photo_manager.dart';
 
 import '../services/memory_service.dart';
+import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 
 class CreateMemoryScreen extends StatefulWidget {
-  const CreateMemoryScreen({super.key});
+  const CreateMemoryScreen({
+    super.key,
+    this.discoveredAssets = const [],
+  });
+
+  final List<AssetEntity> discoveredAssets;
 
   @override
   State<CreateMemoryScreen> createState() =>
@@ -40,6 +47,16 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+
+    if (widget.discoveredAssets.isNotEmpty) {
+      _selectedDate =
+          widget.discoveredAssets.first.createDateTime;
+    }
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
@@ -56,11 +73,83 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
       lastDate: DateTime.now(),
     );
 
-    if (selectedDate != null) {
+    if (selectedDate != null && mounted) {
       setState(() {
         _selectedDate = selectedDate;
       });
     }
+  }
+
+  Future<void> _pickPhotos() async {
+    try {
+      final images = await _picker.pickMultiImage();
+
+      if (images.isNotEmpty && mounted) {
+        setState(() {
+          _selectedImages = [
+            ..._selectedImages,
+            ...images,
+          ];
+          _error = null;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _error = 'Could not select photos. Please try again.';
+      });
+    }
+  }
+
+  Future<List<String>> _savePhotosLocally() async {
+    final directory = await getApplicationDocumentsDirectory();
+
+    final photosDirectory = Directory(
+      '${directory.path}/memory_photos',
+    );
+
+    if (!await photosDirectory.exists()) {
+      await photosDirectory.create(recursive: true);
+    }
+
+    final savedPaths = <String>[];
+
+    Future<void> copyPhoto(File source) async {
+      final extension = path.extension(source.path);
+      final timestamp =
+          DateTime.now().microsecondsSinceEpoch;
+
+      final fileName = '${timestamp}_${savedPaths.length}'
+          '${extension.isEmpty ? '.jpg' : extension}';
+
+      final destination = File(
+        '${photosDirectory.path}/$fileName',
+      );
+
+      await source.copy(destination.path);
+      savedPaths.add('memory_photos/$fileName');
+    }
+
+    // Copy photos selected from the device photo library.
+    for (final asset in widget.discoveredAssets) {
+      final file = await asset.file;
+
+      if (file != null && await file.exists()) {
+        await copyPhoto(file);
+      }
+    }
+
+    // Copy photos selected through the regular image picker.
+    for (final image in _selectedImages) {
+      final file = File(image.path);
+
+      if (await file.exists()) {
+        await copyPhoto(file);
+      }
+    }
+
+    return savedPaths;
   }
 
   Future<void> _saveMemory() async {
@@ -100,6 +189,8 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
 
       Navigator.pop(context);
     } catch (e) {
+      debugPrint('Could not save memory: $e');
+
       if (!mounted) return;
 
       setState(() {
@@ -135,49 +226,12 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
         '${_selectedDate.year}';
   }
 
-  Future<void> _pickPhotos() async {
-    final images = await _picker.pickMultiImage();
-
-    if (images.isNotEmpty && mounted) {
-      setState(() {
-        _selectedImages = images;
-      });
-    }
-  }
-
-  Future<List<String>> _savePhotosLocally() async {
-    final directory = await getApplicationDocumentsDirectory();
-
-    final photosDirectory = Directory(
-      '${directory.path}/memory_photos',
-    );
-
-    if (!await photosDirectory.exists()) {
-      await photosDirectory.create(recursive: true);
-    }
-
-    final List<String> savedPaths = [];
-
-    for (final image in _selectedImages) {
-      final extension = path.extension(image.path);
-
-      final fileName =
-          '${DateTime.now().microsecondsSinceEpoch}$extension';
-
-      final newPath =
-          '${photosDirectory.path}/$fileName';
-
-      await File(image.path).copy(newPath);
-
-      savedPaths.add('memory_photos/$fileName');
-    }
-
-    return savedPaths;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    final discoveredPhotos = widget.discoveredAssets;
 
     return Scaffold(
       appBar: AppBar(
@@ -195,35 +249,29 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
             children: [
               TextField(
                 controller: _titleController,
-                textCapitalization: TextCapitalization.sentences,
-                style: TextStyle(
-                  color: colorScheme.onSurface,
-                ),
+                textCapitalization:
+                    TextCapitalization.sentences,
+                style: TextStyle(color: colors.onSurface),
                 decoration: _inputDecoration(
                   'Title',
                   'Rhode Island Trip',
                 ),
               ),
-
               const SizedBox(height: 16),
-
               TextField(
                 controller: _descriptionController,
-                textCapitalization: TextCapitalization.sentences,
+                textCapitalization:
+                    TextCapitalization.sentences,
                 maxLines: 4,
-                style: TextStyle(
-                  color: colorScheme.onSurface,
-                ),
+                style: TextStyle(color: colors.onSurface),
                 decoration: _inputDecoration(
                   'Description',
                   'What made this memory special?',
                 ),
               ),
-
               const SizedBox(height: 16),
-
               InkWell(
-                onTap: _chooseDate,
+                onTap: _saving ? null : _chooseDate,
                 borderRadius: BorderRadius.circular(18),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -231,175 +279,147 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
                     vertical: 18,
                   ),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest,
+                    color: colors.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.calendar_today_outlined,
-                        color: colorScheme.onSurface,
+                        color: colors.onSurface,
                       ),
-
                       const SizedBox(width: 14),
-
                       Expanded(
                         child: Text(
                           _formattedDate(),
                           style: TextStyle(
                             fontSize: 16,
-                            color: colorScheme.onSurface,
+                            color: colors.onSurface,
                           ),
                         ),
                       ),
-
                       Icon(
                         Icons.chevron_right,
-                        color: colorScheme.onSurfaceVariant,
+                        color: colors.onSurfaceVariant,
                       ),
                     ],
                   ),
                 ),
               ),
-
               const SizedBox(height: 16),
-
               TextField(
                 controller: _locationController,
                 textCapitalization: TextCapitalization.words,
-                style: TextStyle(
-                  color: colorScheme.onSurface,
-                ),
+                style: TextStyle(color: colors.onSurface),
                 decoration: _inputDecoration(
                   'Location',
                   'Newport, Rhode Island',
                 ),
               ),
-
               const SizedBox(height: 16),
-
               TextField(
                 controller: _peopleController,
                 textCapitalization: TextCapitalization.words,
-                style: TextStyle(
-                  color: colorScheme.onSurface,
-                ),
+                style: TextStyle(color: colors.onSurface),
                 decoration: _inputDecoration(
                   'People',
                   'David, Sarah, Alex',
                 ),
               ),
-
               const SizedBox(height: 8),
-
               Text(
                 'Separate people with commas.',
                 style: TextStyle(
                   fontSize: 13,
-                  color: colorScheme.onSurfaceVariant,
+                  color: colors.onSurfaceVariant,
                 ),
               ),
-
               const SizedBox(height: 20),
-
               OutlinedButton.icon(
                 onPressed: _saving ? null : _pickPhotos,
                 icon: const Icon(
                   Icons.photo_library_outlined,
                 ),
                 label: Text(
-                  _selectedImages.isEmpty
+                  _photoCount == 0
                       ? 'Add Photos'
-                      : '${_selectedImages.length} Photos Selected',
+                      : '$_photoCount Photos Selected',
                 ),
               ),
-
-              if (_selectedImages.isNotEmpty) ...[
+              if (_photoCount > 0) ...[
                 const SizedBox(height: 16),
-
                 SizedBox(
                   height: 110,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    itemCount: _selectedImages.length,
+                    itemCount: _photoCount,
                     separatorBuilder: (_, __) =>
                         const SizedBox(width: 12),
                     itemBuilder: (context, index) {
-                      final image = _selectedImages[index];
+                      final isDiscovered =
+                          index < discoveredPhotos.length;
 
-                      return Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Image.file(
-                              File(image.path),
+                      final Widget photo = isDiscovered
+                          ? AssetEntityImage(
+                              discoveredPhotos[index],
+                              isOriginal: false,
+                              thumbnailSize:
+                                  const ThumbnailSize.square(250),
+                              fit: BoxFit.cover,
+                              width: 110,
+                              height: 110,
+                            )
+                          : Image.file(
+                              File(
+                                _selectedImages[
+                                  index - discoveredPhotos.length
+                                ].path,
+                              ),
                               width: 110,
                               height: 110,
                               fit: BoxFit.cover,
-                            ),
-                          ),
+                            );
 
-                          Positioned(
-                            top: 5,
-                            right: 5,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedImages.removeAt(index);
-                                });
-                              },
-                              child: Container(
-                                width: 28,
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primary,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.close,
-                                  color: colorScheme.onPrimary,
-                                  size: 18,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: photo,
                       );
                     },
                   ),
                 ),
               ],
-
               if (_error != null) ...[
                 const SizedBox(height: 20),
-
                 Text(
                   _error!,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: colorScheme.error,
-                  ),
+                  style: TextStyle(color: colors.error),
                 ),
               ],
-
               const SizedBox(height: 32),
-
               SizedBox(
                 height: 56,
                 child: ElevatedButton(
                   onPressed: _saving ? null : _saveMemory,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colors.primary,
+                    foregroundColor: colors.onPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
                   child: _saving
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
+                            color: colors.onPrimary,
                           ),
                         )
                       : const Text('Save Memory'),
                 ),
               ),
-
               const SizedBox(height: 20),
             ],
           ),
@@ -408,22 +428,25 @@ class _CreateMemoryScreenState extends State<CreateMemoryScreen> {
     );
   }
 
+  int get _photoCount =>
+      widget.discoveredAssets.length + _selectedImages.length;
+
   InputDecoration _inputDecoration(
     String label,
     String hint,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colors = Theme.of(context).colorScheme;
 
     return InputDecoration(
       labelText: label,
       hintText: hint,
       filled: true,
-      fillColor: colorScheme.surfaceContainerHighest,
+      fillColor: colors.surfaceContainerHighest,
       labelStyle: TextStyle(
-        color: colorScheme.onSurfaceVariant,
+        color: colors.onSurfaceVariant,
       ),
       hintStyle: TextStyle(
-        color: colorScheme.onSurfaceVariant,
+        color: colors.onSurfaceVariant,
       ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),

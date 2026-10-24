@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/atlas_memory.dart';
 import '../services/memory_service.dart';
 import 'memory_details_screen.dart';
+import 'shared_screen.dart';
 
 class TimelineScreen extends StatefulWidget {
   const TimelineScreen({super.key});
@@ -158,41 +159,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   Widget _buildSharedTimeline() {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.people_outline,
-              size: 56,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Shared memories',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Memories shared with you will appear here.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 15,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const SharedScreen();
   }
 
   Widget _buildTimeline(
